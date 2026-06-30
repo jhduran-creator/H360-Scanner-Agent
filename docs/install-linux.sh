@@ -15,7 +15,7 @@ case "$ARCH" in
   *) echo "Arquitectura no soportada: $ARCH"; exit 1 ;;
 esac
 
-BINARY_URL="https://github.com/kuanta-bridge/helpdesk360/releases/${VERSION}/download/hd360-scanner-linux-${GOARCH}"
+BINARY_URL="https://github.com/jhduran-creator/H360-Scanner-Agent/releases/${VERSION}/download/hd360-scanner-linux-${GOARCH}"
 INSTALL_DIR="/usr/local/bin"
 CONFIG_DIR="/etc/hd360-scanner"
 SERVICE_USER="hd360-scanner"

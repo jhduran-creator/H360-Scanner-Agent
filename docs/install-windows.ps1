@@ -5,7 +5,7 @@
 $ErrorActionPreference = 'Stop'
 
 $VERSION = if ($env:HD360_SCANNER_VERSION) { $env:HD360_SCANNER_VERSION } else { 'latest' }
-$BinaryURL = "https://github.com/kuanta-bridge/helpdesk360/releases/$VERSION/download/hd360-scanner-windows-amd64.exe"
+$BinaryURL = "https://github.com/jhduran-creator/H360-Scanner-Agent/releases/$VERSION/download/hd360-scanner-windows-amd64.exe"
 $InstallDir = 'C:\hd360-scanner'
 $ConfigPath = "$InstallDir\agent.yaml"
 
