@@ -40,9 +40,6 @@ jobs:
           - os: darwin
             arch: arm64
             ext: ""
-    defaults:
-      run:
-        working-directory: services/scanner-agent
     steps:
       - uses: actions/checkout@v4
 
@@ -50,7 +47,7 @@ jobs:
         with:
           go-version: '1.22'
           cache: true
-          cache-dependency-path: services/scanner-agent/go.sum
+          cache-dependency-path: go.sum
 
       - name: Resolve version
         id: ver
@@ -71,7 +68,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: hd360-scanner-${{ matrix.os }}-${{ matrix.arch }}
-          path: services/scanner-agent/dist/
+          path: dist/
 
   release:
     needs: build
@@ -114,16 +111,13 @@ jobs:
             Comparar con `SHA256SUMS` incluido en los assets.
 
             ## Install
-            Ver [docs/INSTALL.md](https://github.com/${{ github.repository }}/blob/main/services/scanner-agent/docs/INSTALL.md).
+            Ver [docs/INSTALL.md](https://github.com/${{ github.repository }}/blob/main/docs/INSTALL.md).
           files: |
             binaries/*
 
   docker:
     needs: build
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: services/scanner-agent
     steps:
       - uses: actions/checkout@v4
 
@@ -142,7 +136,7 @@ jobs:
 
       - uses: docker/build-push-action@v6
         with:
-          context: services/scanner-agent
+          context: .
           platforms: linux/amd64,linux/arm64
           push: true
           build-args: |
