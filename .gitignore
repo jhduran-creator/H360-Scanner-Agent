@@ -1,0 +1,13 @@
+dist/
+hd360-scanner
+hd360-scanner-*
+*.exe
+*.test
+*.out
+coverage.txt
+agent.yaml
+*.local.yaml
+.idea/
+.vscode/
+.DS_Store
+vendor/

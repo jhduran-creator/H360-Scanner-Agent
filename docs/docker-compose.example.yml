@@ -1,0 +1,30 @@
+# Docker Compose para correr hd360-scanner en una LAN del cliente.
+# Requiere:
+#   - cap_add NET_RAW para ICMP raw sockets
+#   - network_mode: host para que el agente vea la LAN real (no la bridge)
+#
+# Uso:
+#   1. Copiar este archivo + agent.yaml al server
+#   2. cp agent.yaml.example agent.yaml + editar
+#   3. docker compose -f docker-compose.example.yml up -d
+#   4. docker logs -f hd360-scanner
+
+version: '3.8'
+
+services:
+  hd360-scanner:
+    image: ghcr.io/kuanta-bridge/hd360-scanner:latest
+    container_name: hd360-scanner
+    restart: unless-stopped
+    network_mode: host
+    cap_add:
+      - NET_RAW
+    volumes:
+      - ./agent.yaml:/etc/hd360-scanner/agent.yaml:ro
+    environment:
+      # Alternativa a volume — definir directamente como env
+      # HD360_SCANNER_SCANNER_ID: <uuid>
+      # HD360_SCANNER_AGENT_SECRET: <secret>
+      # HD360_SCANNER_CLOUD_URL: https://kuanta.helpdesk360.cr/api/v1
+      HD360_SCANNER_LOG_LEVEL: info
+      HD360_SCANNER_LOG_FORMAT: json

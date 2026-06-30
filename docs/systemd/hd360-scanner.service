@@ -1,0 +1,36 @@
+# systemd unit file para hd360-scanner.
+# Instalar en: /etc/systemd/system/hd360-scanner.service
+# Después: sudo systemctl daemon-reload && sudo systemctl enable --now hd360-scanner
+
+[Unit]
+Description=HelpDesk 360 LAN Discovery Agent
+Documentation=https://helpdesk360.cr/docs/scanner-agent
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=hd360-scanner
+Group=hd360-scanner
+ExecStart=/usr/local/bin/hd360-scanner run --config /etc/hd360-scanner/agent.yaml
+Restart=on-failure
+RestartSec=10s
+StandardOutput=journal
+StandardError=journal
+
+# Capability para raw sockets (ICMP) sin necesidad de correr como root
+AmbientCapabilities=CAP_NET_RAW
+CapabilityBoundingSet=CAP_NET_RAW
+
+# Hardening básico
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+ReadOnlyPaths=/etc/hd360-scanner
+PrivateTmp=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+
+[Install]
+WantedBy=multi-user.target

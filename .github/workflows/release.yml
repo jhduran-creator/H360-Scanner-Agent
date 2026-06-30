@@ -1,0 +1,152 @@
+# GitHub Actions: build cross-platform binarios + Docker image al taggear
+# una release `scanner-vX.Y.Z`.
+#
+# Se dispara con git tag scanner-v1.0.0 (prefijo distintivo del repo).
+# Sube binarios a la GitHub Release + push Docker image a GHCR.
+
+name: scanner-agent-release
+
+on:
+  push:
+    tags:
+      - 'scanner-v*'
+
+permissions:
+  contents: write   # crear release + upload assets
+  packages: write   # push GHCR
+
+env:
+  IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/hd360-scanner
+
+jobs:
+  build:
+    name: Build ${{ matrix.os }}/${{ matrix.arch }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - os: linux
+            arch: amd64
+            ext: ""
+          - os: linux
+            arch: arm64
+            ext: ""
+          - os: windows
+            arch: amd64
+            ext: ".exe"
+          - os: darwin
+            arch: amd64
+            ext: ""
+          - os: darwin
+            arch: arm64
+            ext: ""
+    defaults:
+      run:
+        working-directory: services/scanner-agent
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+          cache: true
+          cache-dependency-path: services/scanner-agent/go.sum
+
+      - name: Resolve version
+        id: ver
+        run: echo "v=${GITHUB_REF#refs/tags/scanner-v}" >> "$GITHUB_OUTPUT"
+
+      - name: Build
+        env:
+          GOOS: ${{ matrix.os }}
+          GOARCH: ${{ matrix.arch }}
+          CGO_ENABLED: 0
+        run: |
+          mkdir -p dist
+          go build \
+            -ldflags="-s -w -X main.version=${{ steps.ver.outputs.v }}" \
+            -o dist/hd360-scanner-${{ matrix.os }}-${{ matrix.arch }}${{ matrix.ext }} \
+            ./cmd/hd360-scanner
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: hd360-scanner-${{ matrix.os }}-${{ matrix.arch }}
+          path: services/scanner-agent/dist/
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: ./binaries
+          merge-multiple: true
+
+      - name: Resolve version
+        id: ver
+        run: echo "v=${GITHUB_REF#refs/tags/scanner-v}" >> "$GITHUB_OUTPUT"
+
+      - name: Compute checksums
+        run: |
+          cd binaries
+          sha256sum * > SHA256SUMS
+          cat SHA256SUMS
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          tag_name: scanner-v${{ steps.ver.outputs.v }}
+          name: hd360-scanner v${{ steps.ver.outputs.v }}
+          body: |
+            # HelpDesk 360 Scanner Agent v${{ steps.ver.outputs.v }}
+
+            Binarios cross-platform del agente Go que descubre activos en LAN.
+
+            ## Download
+            - **Linux amd64**: `hd360-scanner-linux-amd64`
+            - **Linux arm64**: `hd360-scanner-linux-arm64`
+            - **Windows amd64**: `hd360-scanner-windows-amd64.exe`
+            - **macOS amd64**: `hd360-scanner-darwin-amd64`
+            - **macOS arm64**: `hd360-scanner-darwin-arm64`
+
+            ## Verify
+            Comparar con `SHA256SUMS` incluido en los assets.
+
+            ## Install
+            Ver [docs/INSTALL.md](https://github.com/${{ github.repository }}/blob/main/services/scanner-agent/docs/INSTALL.md).
+          files: |
+            binaries/*
+
+  docker:
+    needs: build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: services/scanner-agent
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Resolve version
+        id: ver
+        run: echo "v=${GITHUB_REF#refs/tags/scanner-v}" >> "$GITHUB_OUTPUT"
+
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: docker/build-push-action@v6
+        with:
+          context: services/scanner-agent
+          platforms: linux/amd64,linux/arm64
+          push: true
+          build-args: |
+            VERSION=${{ steps.ver.outputs.v }}
+          tags: |
+            ${{ env.IMAGE_NAME }}:${{ steps.ver.outputs.v }}
+            ${{ env.IMAGE_NAME }}:latest

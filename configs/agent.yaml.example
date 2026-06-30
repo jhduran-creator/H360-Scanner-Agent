@@ -1,0 +1,34 @@
+# HelpDesk 360 Scanner Agent — config de ejemplo
+#
+# Copiá a /etc/hd360-scanner/agent.yaml (chmod 600) o pasá --config en CLI.
+# Los valores también se pueden setear por env var con prefijo HD360_SCANNER_:
+#   HD360_SCANNER_SCANNER_ID, HD360_SCANNER_AGENT_SECRET, HD360_SCANNER_CLOUD_URL
+
+# ─── Identidad (obligatorios) ──────────────────────────────────────────────
+
+# UUID del scanner generado al crear desde la UI cloud
+scanner_id: 00000000-0000-0000-0000-000000000000
+
+# Secret recibido UNA VEZ al crear el scanner. Si lo perdés, rotar desde la UI.
+agent_secret: REPLACE_ME_PASTE_FROM_CLOUD
+
+# URL del cloud HD360 — tipicamente https://{tenant}.helpdesk360.cr/api/v1
+cloud_url: https://kuanta.helpdesk360.cr/api/v1
+
+# ─── Intervalos (opcionales) ───────────────────────────────────────────────
+
+# Cada cuánto manda heartbeat al cloud (también es cuando refresca config)
+heartbeat_interval_sec: 60
+
+# Timeout de cada request HTTP al cloud
+http_timeout_sec: 30
+
+# ─── Logging (opcionales) ──────────────────────────────────────────────────
+
+log_level: info     # debug | info | warn | error
+log_format: text    # text | json (json recomendado en prod con log aggregator)
+
+# ─── Dev-only ──────────────────────────────────────────────────────────────
+
+# NO usar en prod — solo para probar contra cloud con cert self-signed
+insecure_skip_verify: false
